@@ -23,7 +23,7 @@ if(!roomId){
 
 let displayName=localStorage.getItem('display_name')
 if(!displayName){
-    window.location=`lobby.html`
+    window.location=`index.html`
 
 }
 
