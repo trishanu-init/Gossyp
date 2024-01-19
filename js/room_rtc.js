@@ -1,4 +1,4 @@
-const APP_ID="cbdda67826e244b988e19b3c6c3d4d4b"
+const APP_ID="2bad0d38914a48499598e84b45b8fe2f"
 
 let uid = sessionStorage.getItem('uid')
 //create new uid for user if one is not there already
@@ -10,12 +10,21 @@ if(!uid){
 let token = null;
 let client;
 
+let rtmClient;
+let channel;
+
 const queryString = window.location.search
 const urlParams = new URLSearchParams(queryString)
 let roomId = urlParams.get('room')
 
 if(!roomId){
     roomId = 'main'
+}
+
+let displayName=localStorage.getItem('display_name')
+if(!displayName){
+    window.location=`lobby.html`
+
 }
 
 //room.html?room=345
@@ -27,8 +36,23 @@ let localScreenTracks;
 let sharingScreen=false;
 
 let joinRoomInit = async()=>{
+    rtmClient=await AgoraRTM.createInstance(APP_ID)
+    await rtmClient.login({uid,token})
+
+    await rtmClient.addOrUpdateLocalUserAttributes({'name':displayName})
+
+    channel=await rtmClient.createChannel(roomId)
+    await channel.join()
+
+    channel.on('MemberJoined', handleMemberJoined)
+    channel.on('MemberLeft', handleMemberLeft)
+    channel.on('ChannelMessage', handleChannelMessage)
+
     client=AgoraRTC.createClient({mode:'rtc',codec:'vp8'})
     await client.join(APP_ID, roomId, token, uid)
+
+    getMembers()
+    addBotMessageToDom(`Welcome to the Room ${displayName}!👋`)
 
     client.on('user-published', handleUserPublished)
     client.on('user-left', handleUserLeft)
